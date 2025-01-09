@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install dependancies
+      run: sudo apt-get install -y libgtk-3-dev autoconf automake autopoint gettext geany-common
     - name: make
       run: make
     #- name: make check
