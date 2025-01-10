@@ -186,7 +186,29 @@ D(static void log_debug(const gchar* s, ...)
 	g_free(format);
 	va_end(l);
 })
+/**********************************************************************/
+static GtkLabel* status_indicator_label;
 
+static void update_status(void) {
+  if (RecordingMacro != NULL)
+    gtk_widget_show(GTK_WIDGET(status_indicator_label));
+  else
+    gtk_widget_hide(GTK_WIDGET(status_indicator_label));
+}
+
+static void status_indicator_init(GeanyPlugin* plugin) {
+    GeanyData* geany_data = plugin->geany_data;
+    GtkStatusbar* geany_statusbar;
+    GtkHBox* geany_statusbar_box;
+
+    geany_statusbar = (GtkStatusbar*)ui_lookup_widget(geany->main_widgets->window, "statusbar");
+    geany_statusbar_box = (GtkHBox*)gtk_widget_get_parent(GTK_WIDGET(geany_statusbar));
+    status_indicator_label = (GtkLabel*)gtk_label_new(NULL);
+    gtk_label_set_markup(status_indicator_label,
+        "<span foreground='red' weight='bold'>REC</span>");
+    gtk_box_pack_end(GTK_BOX(geany_statusbar_box),
+        GTK_WIDGET(status_indicator_label), FALSE, FALSE, 10);
+}
 /**********************************************************************/
 
 static int lparamIsStr(gint msg) {
@@ -249,6 +271,7 @@ static void macrec_record(G_GNUC_UNUSED guint key_id) {
   } else {
     macrec_stop_recording();
   }
+  update_status();
 
 }
 
@@ -267,7 +290,7 @@ static void macrec_play(G_GNUC_UNUSED guint key_id) {
   }
   if (RecordingMacro != NULL) {
     macrec_stop_recording();
-    return;
+    update_status();
   }
   ui_set_statusbar(TRUE, "Replaying macro...");
 
@@ -316,6 +339,9 @@ static gboolean macrec_init(GeanyPlugin *plugin, G_GNUC_UNUSED gpointer pdata) {
   keybindings_set_item(key_group, KB_PLAY, macrec_play, 0, 0,
 			"playback", "Playback macro", NULL);
 
+  status_indicator_init(plugin);
+  update_status();
+
   //~ plugin_signal_connect(geany_plugin, NULL, "document-activate", TRUE, G_CALLBACK(on_document_activate), NULL);
   //~ plugin_signal_connect(geany_plugin, NULL, "document-reload", TRUE, G_CALLBACK(on_document_activate), NULL);
   //~ plugin_signal_connect(geany_plugin, NULL, "document-open", TRUE, G_CALLBACK(on_document_activate), NULL);
@@ -326,6 +352,8 @@ static gboolean macrec_init(GeanyPlugin *plugin, G_GNUC_UNUSED gpointer pdata) {
 /**********************************************************************/
 static void macrec_cleanup(G_GNUC_UNUSED GeanyPlugin *plugin, G_GNUC_UNUSED gpointer pdata) {
   D(log_debug("%s:%s", __FILE__, __FUNCTION__));
+  gtk_widget_destroy(GTK_WIDGET(status_indicator_label));
+
   RecordingMacro = CurrentMacro = FreeMacro(CurrentMacro);
   msgwin_status_add("Macro Recorder unloaded...");
 }
@@ -335,7 +363,7 @@ static void macrec_cleanup(G_GNUC_UNUSED GeanyPlugin *plugin, G_GNUC_UNUSED gpoi
 /* Show help */
 static void macrec_help (G_GNUC_UNUSED GeanyPlugin *plugin, G_GNUC_UNUSED gpointer pdata) {
   msgwin_status_add("Launching browser to help file");
-  utils_open_browser("https://0ink.net");
+  utils_open_browser("https://github.com/TortugaLabs/geany-macro-recorder-plugin");
 }
 
 /**********************************************************************/
@@ -391,8 +419,6 @@ static PluginCallback macrec_callbacks[] =
         { "document-close", (GCallback) &on_document_close, FALSE, NULL },
         { NULL, NULL, FALSE, NULL }
 };
-
-
 
 G_MODULE_EXPORT
 void geany_load_module(GeanyPlugin *plugin) {
