@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
+#include "version.h"
 #include <geanyplugin.h>
 #include "utils.h"
 #include "Scintilla.h"
@@ -33,7 +33,7 @@
 /**********************************************************************/
 static const char *PLUGIN_NAME = "macrec";
 static const char *PLUGIN_DESCRIPTION = "A simple macro recorder";
-static const char *PLUGIN_VERSION = "0.1";
+static const char *PLUGIN_VERSION = VERSION;
 static const char *PLUGIN_AUTHOR = "alejandro_liu@hotmail.com";
 static const char *PLUGIN_KEY_NAME = "macrec";
 
@@ -282,15 +282,15 @@ static void macrec_play(G_GNUC_UNUSED guint key_id) {
     D(log_debug("No document present\n"));
     return;
   }
+  if (RecordingMacro != NULL) {
+    macrec_stop_recording();
+    update_status();
+  }
   //~ create_modeless_dialog("Hello world");
   if (CurrentMacro == NULL) {
     D(log_debug("no macro to re-play %s:%s", __FILE__, __FUNCTION__));
     ui_set_statusbar(TRUE, "No macro to replay");
     return;
-  }
-  if (RecordingMacro != NULL) {
-    macrec_stop_recording();
-    update_status();
   }
   ui_set_statusbar(TRUE, "Replaying macro...");
 
